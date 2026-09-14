@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survivor Pool Command Center</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --turf-dark:#0F241A;
+  --turf:#173A28;
+  --turf-light:#1F4A34;
+  --chalk:#F2F0E6;
+  --chalk-dim:#B9C4BB;
+  --gold:#C9A227;
+  --gold-bright:#E4BD3C;
+  --danger:#C0392B;
+  --line:#2C5A40;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--turf-dark);
+  color:var(--chalk);
+  font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;
+}
+.wrap{max-width:920px;margin:0 auto;padding:20px 16px 60px;}
+
+/* Header / scoreboard */
+.scoreboard{
+  background:linear-gradient(180deg,var(--turf) 0%, var(--turf-dark) 100%);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:20px 22px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.title-block h1{
+  font-family:'Oswald',sans-serif;
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:0.5px;
+  margin:0 0 4px 0;
+  color:var(--chalk);
+}
+.title-block p{
+  margin:0;
+  color:var(--chalk-dim);
+  font-size:13px;
+}
+.week-pill{
+  background:var(--turf-dark);
+  border:2px solid var(--gold);
+  border-radius:8px;
+  padding:10px 18px;
+  text-align:center;
+  min-width:110px;
+}
+.week-pill .num{
+  font-family:'Oswald',sans-serif;
+  font-size:34px;
+  font-weight:700;
+  color:var(--gold-bright);
+  line-height:1;
+}
+.week-pill .lbl{
+  font-size:11px;
+  color:var(--chalk-dim);
+  margin-top:4px;
+}
+
+/* Week strip */
+.strip{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding:16px 2px 4px;
+  margin-top:16px;
+}
+.wtile{
+  flex:0 0 auto;
+  width:52px;
+  height:64px;
+  border-radius:6px;
+  border:1px solid var(--line);
+  background:var(--turf);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  font-family:'Oswald',sans-serif;
+  cursor:pointer;
+  position:relative;
+  transition:transform .12s ease;
+}
+.wtile:hover{transform:translateY(-2px);}
+.wtile .wn{font-size:16px;font-weight:600;color:var(--chalk-dim);}
+.wtile .tag{font-size:9px;color:var(--gold);margin-top:2px;}
+.wtile.done{background:var(--turf-light);border-color:var(--gold);}
+.wtile.done .wn{color:var(--gold-bright);}
+.wtile.current{outline:2px solid var(--gold-bright);outline-offset:1px;}
+.wtile .used-team{font-size:9px;color:var(--chalk);margin-top:2px;font-family:'Inter';}
+
+/* Cards */
+.card{
+  background:var(--turf);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:20px;
+  margin-top:16px;
+}
+.card h2{
+  font-family:'Oswald',sans-serif;
+  font-size:17px;
+  font-weight:600;
+  margin:0 0 14px 0;
+  color:var(--chalk);
+}
+.pick-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--turf-dark);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:14px 16px;
+  margin-bottom:10px;
+}
+.pick-row .team{
+  font-family:'Oswald',sans-serif;
+  font-size:20px;
+  font-weight:700;
+  color:var(--gold-bright);
+}
+.pick-row .opp{
+  font-size:12px;
+  color:var(--chalk-dim);
+  margin-top:2px;
+}
+.pick-row .prob{
+  font-family:'Oswald',sans-serif;
+  font-size:22px;
+  font-weight:600;
+  color:var(--chalk);
+}
+.prob-bar-wrap{
+  width:100%;
+  height:5px;
+  background:var(--line);
+  border-radius:3px;
+  margin-top:8px;
+  overflow:hidden;
+}
+.prob-bar{height:100%;background:var(--gold-bright);}
+.note{
+  font-size:13px;
+  color:var(--chalk-dim);
+  line-height:1.5;
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px dashed var(--line);
+}
+
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+select, button{
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  border-radius:6px;
+  border:1px solid var(--line);
+  padding:8px 12px;
+  background:var(--turf-dark);
+  color:var(--chalk);
+}
+button{
+  background:var(--gold);
+  color:var(--turf-dark);
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+}
+button:hover{background:var(--gold-bright);}
+button.secondary{
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--chalk-dim);
+  font-weight:500;
+}
+button.secondary:hover{color:var(--chalk);border-color:var(--gold);}
+button:disabled{opacity:0.4;cursor:not-allowed;}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;}
+.chip{
+  font-size:12px;
+  padding:5px 10px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:var(--turf-dark);
+  color:var(--chalk-dim);
+}
+.chip.used{
+  background:rgba(192,57,43,0.15);
+  border-color:var(--danger);
+  color:#E9A6A0;
+  text-decoration:line-through;
+}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;
+  font-family:'Oswald',sans-serif;
+  font-weight:500;
+  font-size:11px;
+  letter-spacing:0.3px;
+  color:var(--chalk-dim);
+  padding:6px 8px;
+  border-bottom:1px solid var(--line);
+}
+td{padding:7px 8px;border-bottom:1px solid rgba(44,90,64,0.5);color:var(--chalk);}
+tr.this-week td{background:rgba(201,162,39,0.12);}
+.double-badge{
+  font-size:9px;
+  background:var(--gold);
+  color:var(--turf-dark);
+  padding:1px 5px;
+  border-radius:4px;
+  margin-left:6px;
+  font-weight:700;
+}
+.small-dim{color:var(--chalk-dim);font-size:12px;}
+.log-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+.log-block label{font-size:12px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:520px){.two-col{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="scoreboard">
+    <div class="title-block">
+      <h1>Survivor Pool Command Center</h1>
+      <p id="subtitle">Full-season optimal path, recalculated live</p>
+    </div>
+    <div class="week-pill">
+      <div class="num" id="weekNum">1</div>
+      <div class="lbl">CURRENT WEEK</div>
+    </div>
+  </div>
+
+  <div class="strip" id="weekStrip"></div>
+
+  <div class="card">
+    <h2 id="pickHeading">This Week's Recommended Pick</h2>
+    <div id="pickArea"></div>
+    <div class="log-block">
+      <label>Log the pick(s) you actually made this week:</label>
+      <div class="controls" id="logControls"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Remaining Teams (<span id="remainingCount">0</span>)</h2>
+    <div class="chips" id="teamChips"></div>
+  </div>
+
+  <div class="card">
+    <h2>Season Roadmap</h2>
+    <p class="small-dim" style="margin-top:-8px;margin-bottom:10px;">Optimal path forward given your used teams. Recalculates every time you log a pick.</p>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Week</th><th>Recommended</th><th>Opponent</th><th>Win Prob</th></tr></thead>
+        <tbody id="roadmapBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>History</h2>
+    <p class="small-dim" style="margin-top:-8px;margin-bottom:10px;">See how the model's full-season plan looked on a past run — zero teams used, as a clean baseline comparison across weeks.</p>
+    <div class="controls">
+      <select id="historySelect"><option value="">Loading runs…</option></select>
+      <button class="secondary" id="historyViewBtn">View</button>
+    </div>
+    <div id="historyResult" style="margin-top:14px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Manage</h2>
+    <div class="controls">
+      <button class="secondary" id="prevWeekBtn">&larr; Previous Week</button>
+      <button class="secondary" id="nextWeekBtn">Next Week &rarr;</button>
+      <button class="secondary" id="resetBtn">Reset All Data</button>
+    </div>
+    <p class="small-dim" id="freshness" style="margin-top:10px;"></p>
+  </div>
+
+</div>
+
+<script>
+const DATA = __DATA_JSON__;
+
+const TEAM_NAMES = {
+  ARI:"Cardinals",ATL:"Falcons",BAL:"Ravens",BUF:"Bills",CAR:"Panthers",CHI:"Bears",
+  CIN:"Bengals",CLE:"Browns",DAL:"Cowboys",DEN:"Broncos",DET:"Lions",GB:"Packers",
+  HOU:"Texans",IND:"Colts",JAX:"Jaguars",KC:"Chiefs",LA:"Rams",LAC:"Chargers",
+  LV:"Raiders",MIA:"Dolphins",MIN:"Vikings",NE:"Patriots",NO:"Saints",NYG:"Giants",
+  NYJ:"Jets",PHI:"Eagles",PIT:"Steelers",SEA:"Seahawks",SF:"49ers",TB:"Buccaneers",
+  TEN:"Titans",WAS:"Commanders"
+};
+
+const DOUBLE_WEEKS = new Set(DATA.double_weeks);
+const TEAMS = Object.keys(TEAM_NAMES);
+
+const STORAGE_KEY = 'survivor_state_v1';
+let state = { usedByWeek: {}, currentWeek: null };
+
+function loadState(){
+  try{
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if(raw) state = JSON.parse(raw);
+  }catch(e){ /* no saved state yet, or storage unavailable */ }
+  if(!state.currentWeek) state.currentWeek = DATA.current_week || 1;
+}
+function saveState(){
+  try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('save failed', e); }
+}
+
+// ---------- Hungarian algorithm (square cost matrix, minimize) ----------
+function hungarian(cost){
+  const n = cost.length;
+  const INF = Infinity;
+  const u = new Array(n+1).fill(0);
+  const v = new Array(n+1).fill(0);
+  const p = new Array(n+1).fill(0);
+  const way = new Array(n+1).fill(0);
+  for(let i=1;i<=n;i++){
+    p[0]=i;
+    let j0=0;
+    const minv = new Array(n+1).fill(INF);
+    const used = new Array(n+1).fill(false);
+    do{
+      used[j0]=true;
+      const i0=p[j0];
+      let delta=INF, j1=-1;
+      for(let j=1;j<=n;j++){
+        if(!used[j]){
+          const cur = cost[i0-1][j-1]-u[i0]-v[j];
+          if(cur<minv[j]){ minv[j]=cur; way[j]=j0; }
+          if(minv[j]<delta){ delta=minv[j]; j1=j; }
+        }
+      }
+      for(let j=0;j<=n;j++){
+        if(used[j]){ u[p[j]]+=delta; v[j]-=delta; }
+        else{ minv[j]-=delta; }
+      }
+      j0=j1;
+    }while(p[j0]!==0);
+    do{
+      const j1=way[j0];
+      p[j0]=p[j1];
+      j0=j1;
+    }while(j0!==0);
+  }
+  const result = new Array(n).fill(-1);
+  for(let j=1;j<=n;j++){ if(p[j]>0) result[p[j]-1]=j-1; }
+  return result;
+}
+
+function getInfo(team, week){
+  return DATA.team_week[team+'|'+week] || null;
+}
+
+function usedTeamsSet(){
+  const s = new Set();
+  Object.values(state.usedByWeek).forEach(arr => arr.forEach(t => s.add(t)));
+  return s;
+}
+
+function buildRemainingSlots(){
+  const slots = [];
+  for(let w=state.currentWeek; w<=18; w++){
+    const required = DOUBLE_WEEKS.has(w) ? 2 : 1;
+    const already = (state.usedByWeek[w]||[]).length;
+    for(let k=already; k<required; k++){
+      slots.push(w);
+    }
+  }
+  return slots;
+}
+
+function computeAssignment(){
+  const used = usedTeamsSet();
+  const availTeams = TEAMS.filter(t=>!used.has(t));
+  const slots = buildRemainingSlots(); // array of week numbers, one per slot
+  const n = Math.max(availTeams.length, slots.length);
+  const BIG = 60;
+  const cost = [];
+  for(let i=0;i<n;i++){
+    const row = [];
+    for(let j=0;j<n;j++){
+      if(i>=availTeams.length || j>=slots.length){
+        row.push(0); // dummy row or column
+        continue;
+      }
+      const team = availTeams[i];
+      const week = slots[j];
+      const info = getInfo(team, week);
+      if(!info || info.played){
+        row.push(BIG);
+      }else{
+        const p = Math.min(Math.max(info.p, 0.001), 0.999);
+        row.push(-Math.log(p));
+      }
+    }
+    cost.push(row);
+  }
+  const assignment = hungarian(cost); // row -> col
+  // build week -> [{team, p, opp, home}]
+  const plan = {};
+  for(let i=0;i<availTeams.length;i++){
+    const j = assignment[i];
+    if(j<0 || j>=slots.length) continue;
+    const team = availTeams[i];
+    const week = slots[j];
+    const info = getInfo(team, week);
+    if(!info) continue;
+    if(!plan[week]) plan[week]=[];
+    plan[week].push({team, p:info.p, opp:info.opp, home:info.home});
+  }
+  Object.values(plan).forEach(arr => arr.sort((a,b)=>b.p-a.p));
+  return plan;
+}
+
+function fmtPct(p){ return Math.round(p*100)+'%'; }
+
+function render(){
+  const plan = computeAssignment();
+  const used = usedTeamsSet();
+
+  document.getElementById('weekNum').textContent = state.currentWeek;
+  document.getElementById('freshness').textContent =
+    `Odds/ratings snapshot generated ${DATA.generated} (${DATA.run_label} run). The model re-runs Thursday and Saturday mornings.`;
+
+  // Week strip
+  const strip = document.getElementById('weekStrip');
+  strip.innerHTML = '';
+  for(let w=1; w<=18; w++){
+    const div = document.createElement('div');
+    const isDouble = DOUBLE_WEEKS.has(w);
+    const doneArr = state.usedByWeek[w]||[];
+    const required = isDouble?2:1;
+    const isDone = doneArr.length >= required;
+    div.className = 'wtile' + (isDone?' done':'') + (w===state.currentWeek?' current':'');
+    div.innerHTML = `<div class="wn">W${w}</div>` +
+      (isDouble ? '<div class="tag">2x</div>' : '') +
+      (doneArr.length ? `<div class="used-team">${doneArr.join('/')}</div>` : '');
+    div.onclick = () => { state.currentWeek = w; saveState(); render(); };
+    strip.appendChild(div);
+  }
+
+  // Pick area
+  const pickArea = document.getElementById('pickArea');
+  const wk = state.currentWeek;
+  const isDouble = DOUBLE_WEEKS.has(wk);
+  document.getElementById('pickHeading').textContent =
+    `Week ${wk} Recommended Pick${isDouble?'s (Double Week)':''}`;
+  const recs = (plan[wk]||[]);
+  pickArea.innerHTML = '';
+  if(recs.length===0){
+    pickArea.innerHTML = '<p class="small-dim">No games available this week (bye or already resolved). Advance to the next week.</p>';
+  }
+  recs.forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'pick-row';
+    row.style.flexDirection='column';
+    row.style.alignItems='stretch';
+    const oppName = TEAM_NAMES[r.opp]||r.opp;
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="team">${TEAM_NAMES[r.team]} (${r.team})</div>
+          <div class="opp">${r.home? 'vs':'at'} ${oppName}</div>
+        </div>
+        <div class="prob">${fmtPct(r.p)}</div>
+      </div>
+      <div class="prob-bar-wrap"><div class="prob-bar" style="width:${Math.round(r.p*100)}%"></div></div>
+    `;
+    pickArea.appendChild(row);
+  });
+
+  if(recs.length){
+    const note = document.createElement('div');
+    note.className = 'note';
+    note.textContent = "This is the pick that maximizes your odds of surviving the full remaining season, not just this week — it accounts for every future matchup and keeps stronger teams in reserve for tougher weeks ahead.";
+    pickArea.appendChild(note);
+  }
+
+  // Log controls
+  const logControls = document.getElementById('logControls');
+  logControls.innerHTML = '';
+  const slotsNeeded = isDouble ? 2 - (state.usedByWeek[wk]||[]).length : 1 - (state.usedByWeek[wk]||[]).length;
+  if(slotsNeeded<=0){
+    logControls.innerHTML = `<span class="small-dim">Week ${wk} already logged: ${(state.usedByWeek[wk]||[]).join(', ')}</span>
+      <button class="secondary" id="undoBtn">Undo last pick this week</button>`;
+    document.getElementById('undoBtn').onclick = ()=>{
+      state.usedByWeek[wk].pop();
+      if(state.usedByWeek[wk].length===0) delete state.usedByWeek[wk];
+      saveState(); render();
+    };
+  } else {
+    // dropdown of teams playing this week, not used, not already played
+    const options = TEAMS.filter(t=>{
+      if(used.has(t)) return false;
+      const info = getInfo(t, wk);
+      if(!info || info.played) return false;
+      if((state.usedByWeek[wk]||[]).includes(t)) return false;
+      return true;
+    }).sort((a,b)=> (getInfo(b,wk).p)-(getInfo(a,wk).p));
+    const sel = document.createElement('select');
+    options.forEach(t=>{
+      const info = getInfo(t,wk);
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = `${TEAM_NAMES[t]} (${t}) — ${fmtPct(info.p)}`;
+      sel.appendChild(opt);
+    });
+    const btn = document.createElement('button');
+    btn.textContent = 'Log Pick';
+    btn.onclick = ()=>{
+      const t = sel.value;
+      if(!t) return;
+      if(!state.usedByWeek[wk]) state.usedByWeek[wk]=[];
+      state.usedByWeek[wk].push(t);
+      const req = DOUBLE_WEEKS.has(wk)?2:1;
+      if(state.usedByWeek[wk].length>=req && wk===state.currentWeek){
+        // auto advance
+        let nw = wk+1;
+        state.currentWeek = Math.min(nw,18);
+      }
+      saveState(); render();
+    };
+    logControls.appendChild(sel);
+    logControls.appendChild(btn);
+  }
+
+  // Remaining teams chips
+  const chipsDiv = document.getElementById('teamChips');
+  chipsDiv.innerHTML = '';
+  document.getElementById('remainingCount').textContent = (TEAMS.length - used.size);
+  TEAMS.slice().sort((a,b)=>DATA.ratings[b].elo-DATA.ratings[a].elo).forEach(t=>{
+    const chip = document.createElement('span');
+    chip.className = 'chip' + (used.has(t)?' used':'');
+    chip.textContent = `${t}`;
+    chipsDiv.appendChild(chip);
+  });
+
+  // Roadmap table
+  const body = document.getElementById('roadmapBody');
+  body.innerHTML = '';
+  for(let w=state.currentWeek; w<=18; w++){
+    const already = state.usedByWeek[w]||[];
+    const required = DOUBLE_WEEKS.has(w)?2:1;
+    const recsForWeek = plan[w]||[];
+    const rowsForWeek = [];
+    already.forEach(t=>{
+      const info = getInfo(t,w);
+      rowsForWeek.push({team:t, p: info?info.p:null, opp: info?info.opp:null, logged:true});
+    });
+    recsForWeek.forEach(r=>rowsForWeek.push({...r, logged:false}));
+    if(rowsForWeek.length===0){
+      const tr = document.createElement('tr');
+      if(w===state.currentWeek) tr.className='this-week';
+      tr.innerHTML = `<td>W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}</td><td colspan="3" class="small-dim">No pick available (bye/no data)</td>`;
+      body.appendChild(tr);
+      continue;
+    }
+    rowsForWeek.forEach((r,idx)=>{
+      const tr = document.createElement('tr');
+      if(w===state.currentWeek) tr.className='this-week';
+      const weekCell = idx===0 ? `W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}` : '';
+      tr.innerHTML = `<td>${weekCell}</td>
+        <td>${TEAM_NAMES[r.team]||r.team}${r.logged?' ✓':''}</td>
+        <td>${r.opp?(TEAM_NAMES[r.opp]||r.opp):'-'}</td>
+        <td>${r.p!=null?fmtPct(r.p):'-'}</td>`;
+      body.appendChild(tr);
+    });
+  }
+}
+
+document.getElementById('prevWeekBtn').onclick = ()=>{
+  state.currentWeek = Math.max(1, state.currentWeek-1);
+  saveState(); render();
+};
+document.getElementById('nextWeekBtn').onclick = ()=>{
+  state.currentWeek = Math.min(18, state.currentWeek+1);
+  saveState(); render();
+};
+document.getElementById('resetBtn').onclick = ()=>{
+  if(confirm('Reset all logged picks and start over?')){
+    state = { usedByWeek:{}, currentWeek: DATA.current_week || 1 };
+    saveState(); render();
+  }
+};
+
+// ---------- History ----------
+async function initHistory(){
+  const sel = document.getElementById('historySelect');
+  const resultDiv = document.getElementById('historyResult');
+  try{
+    const res = await fetch('history/index.json', {cache:'no-store'});
+    if(!res.ok) throw new Error('no history index');
+    const runs = await res.json();
+    if(!runs.length){
+      sel.innerHTML = '<option value="">No past runs yet</option>';
+      return;
+    }
+    sel.innerHTML = '';
+    runs.slice().reverse().forEach(r=>{
+      const opt = document.createElement('option');
+      opt.value = r.file;
+      opt.textContent = `${r.date} — ${r.run_label} run (as of Week ${r.week})`;
+      sel.appendChild(opt);
+    });
+  }catch(e){
+    sel.innerHTML = '<option value="">History not available yet</option>';
+  }
+
+  document.getElementById('historyViewBtn').onclick = async ()=>{
+    const file = sel.value;
+    if(!file){ resultDiv.innerHTML = ''; return; }
+    resultDiv.innerHTML = '<p class="small-dim">Loading…</p>';
+    try{
+      const res = await fetch(file, {cache:'no-store'});
+      const snap = await res.json();
+      const assignment = snap.optimal_assignment || {};
+      let rows = '';
+      for(let w=1; w<=18; w++){
+        const picks = assignment[String(w)] || assignment[w] || [];
+        if(!picks.length){
+          rows += `<tr><td>W${w}</td><td colspan="3" class="small-dim">—</td></tr>`;
+          continue;
+        }
+        picks.forEach((p,idx)=>{
+          const weekCell = idx===0 ? `W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}` : '';
+          rows += `<tr><td>${weekCell}</td><td>${TEAM_NAMES[p.team]||p.team}</td><td></td><td>${fmtPct(p.p)}</td></tr>`;
+        });
+      }
+      resultDiv.innerHTML = `
+        <p class="small-dim">Baseline full-season plan as computed on ${snap.generated} (${snap.run_label} run), zero teams used — not adjusted for your actual logged picks.</p>
+        <div style="overflow-x:auto;"><table>
+          <thead><tr><th>Week</th><th>Team</th><th></th><th>Win Prob</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>`;
+    }catch(e){
+      resultDiv.innerHTML = '<p class="small-dim">Could not load that run.</p>';
+    }
+  };
+}
+
+loadState();
+render();
+initHistory();
+</script>
+</body>
+</html>
