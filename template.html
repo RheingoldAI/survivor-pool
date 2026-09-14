@@ -134,6 +134,39 @@ a:hover{text-decoration:underline;}
 .wtile.done .wn{color:var(--accent-bright);}
 .wtile.current{outline:2px solid var(--accent);outline-offset:1px;}
 .wtile .used-team{font-size:9px;color:var(--text);margin-top:2px;font-family:'Roboto',sans-serif;}
+.used-logo-row{display:flex;gap:2px;margin-top:3px;justify-content:center;}
+.used-logo{width:16px;height:16px;border-radius:3px;padding:1px;}
+.result-badge{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:10px;
+  font-weight:700;
+  color:#fff;
+  border:2px solid var(--bg);
+}
+.result-badge.win{background:#22C55E;}
+.result-badge.loss{background:var(--danger);}
+
+.team-logo{
+  display:inline-block;
+  vertical-align:middle;
+  object-fit:contain;
+  border-radius:6px;
+  background:rgba(255,255,255,0.9);
+  padding:2px;
+  flex-shrink:0;
+}
+.team-logo-sm{width:18px;height:18px;border-radius:4px;padding:1.5px;}
+.team-logo-md{width:26px;height:26px;}
+.team-logo-lg{width:42px;height:42px;border-radius:9px;padding:3px;}
+.team-row{display:flex;align-items:center;gap:8px;}
 
 /* Cards */
 .card{
@@ -226,11 +259,14 @@ button:disabled{opacity:0.4;cursor:not-allowed;}
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
 .chip{
   font-size:12px;
-  padding:5px 10px;
+  padding:4px 10px 4px 6px;
   border-radius:14px;
   border:1px solid var(--border);
   background:var(--card-solid);
   color:var(--text-dim);
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
 }
 .chip.used{
   background:rgba(239,68,68,0.1);
@@ -475,6 +511,24 @@ function computeAssignment(){
 
 function fmtPct(p){ return Math.round(p*100)+'%'; }
 
+function logoUrl(team){ return `https://a.espncdn.com/i/teamlogos/nfl/500/${team.toLowerCase()}.png`; }
+function logoImg(team, sizeClass){
+  return `<img class="team-logo ${sizeClass}" src="${logoUrl(team)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`;
+}
+
+// For a week's logged picks, did you survive? null = not yet decided (game hasn't been played).
+function weekResult(w){
+  const picked = state.usedByWeek[w] || [];
+  if(!picked.length) return null;
+  let anyPending = false;
+  for(const t of picked){
+    const info = getInfo(t, w);
+    if(!info || !info.played){ anyPending = true; continue; }
+    if(!info.won) return 'loss';
+  }
+  return anyPending ? null : 'win';
+}
+
 function render(){
   const plan = computeAssignment();
   const used = usedTeamsSet();
@@ -493,9 +547,12 @@ function render(){
     const required = isDouble?2:1;
     const isDone = doneArr.length >= required;
     div.className = 'wtile' + (isDone?' done':'') + (w===state.currentWeek?' current':'');
-    div.innerHTML = `<div class="wn">W${w}</div>` +
+    const result = weekResult(w);
+    const badge = result==='win' ? '<div class="result-badge win">✓</div>'
+                : result==='loss' ? '<div class="result-badge loss">✕</div>' : '';
+    div.innerHTML = badge + `<div class="wn">W${w}</div>` +
       (isDouble ? '<div class="tag">2x</div>' : '') +
-      (doneArr.length ? `<div class="used-team">${doneArr.join('/')}</div>` : '');
+      (doneArr.length ? `<div class="used-logo-row">${doneArr.map(t=>logoImg(t,'used-logo')).join('')}</div>` : '');
     div.onclick = () => { state.currentWeek = w; saveState(); render(); };
     strip.appendChild(div);
   }
@@ -519,9 +576,12 @@ function render(){
     const oppName = TEAM_NAMES[r.opp]||r.opp;
     row.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div class="team">${TEAM_NAMES[r.team]} (${r.team})</div>
-          <div class="opp">${r.home? 'vs':'at'} ${oppName}</div>
+        <div class="team-row">
+          ${logoImg(r.team,'team-logo-lg')}
+          <div>
+            <div class="team">${TEAM_NAMES[r.team]} (${r.team})</div>
+            <div class="opp">${r.home? 'vs':'at'} ${oppName}</div>
+          </div>
         </div>
         <div class="prob">${fmtPct(r.p)}</div>
       </div>
@@ -593,7 +653,7 @@ function render(){
   TEAMS.slice().sort((a,b)=>DATA.ratings[b].elo-DATA.ratings[a].elo).forEach(t=>{
     const chip = document.createElement('span');
     chip.className = 'chip' + (used.has(t)?' used':'');
-    chip.textContent = `${t}`;
+    chip.innerHTML = logoImg(t,'team-logo-sm') + t;
     chipsDiv.appendChild(chip);
   });
 
@@ -622,7 +682,7 @@ function render(){
       if(w===state.currentWeek) tr.className='this-week';
       const weekCell = idx===0 ? `W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}` : '';
       tr.innerHTML = `<td>${weekCell}</td>
-        <td>${TEAM_NAMES[r.team]||r.team}${r.logged?' ✓':''}</td>
+        <td><div class="team-row">${logoImg(r.team,'team-logo-sm')}${TEAM_NAMES[r.team]||r.team}${r.logged?' ✓':''}</div></td>
         <td>${r.opp?(TEAM_NAMES[r.opp]||r.opp):'-'}</td>
         <td>${r.p!=null?fmtPct(r.p):'-'}</td>`;
       body.appendChild(tr);
@@ -685,7 +745,7 @@ async function initHistory(){
         }
         picks.forEach((p,idx)=>{
           const weekCell = idx===0 ? `W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}` : '';
-          rows += `<tr><td>${weekCell}</td><td>${TEAM_NAMES[p.team]||p.team}</td><td></td><td>${fmtPct(p.p)}</td></tr>`;
+          rows += `<tr><td>${weekCell}</td><td><div class="team-row">${logoImg(p.team,'team-logo-sm')}${TEAM_NAMES[p.team]||p.team}</div></td><td></td><td>${fmtPct(p.p)}</td></tr>`;
         });
       }
       resultDiv.innerHTML = `
