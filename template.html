@@ -297,6 +297,24 @@ tr.this-week td{background:rgba(14,165,233,0.08);}
   margin-left:6px;
   font-weight:700;
 }
+.matchup-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 4px;
+  border-bottom:1px solid rgba(31,41,55,0.5);
+}
+.matchup-row:last-child{border-bottom:none;}
+.matchup-side{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+.matchup-side.away{justify-content:flex-end;text-align:right;flex-direction:row-reverse;}
+.matchup-name{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.matchup-pct{font-family:'IBM Plex Sans',sans-serif;font-size:15px;font-weight:600;width:44px;text-align:center;flex-shrink:0;}
+.matchup-pct.fav{color:var(--accent-bright);}
+.matchup-pct.dog{color:var(--text-dimmer);}
+.matchup-at{font-size:11px;color:var(--text-dimmer);flex-shrink:0;}
+.matchup-badge{font-size:9px;color:var(--text-dimmer);text-transform:uppercase;letter-spacing:0.3px;flex-shrink:0;width:36px;text-align:center;}
+.ai-pick-note{font-size:11px;color:var(--text-dimmer);margin-top:2px;display:flex;align-items:center;gap:4px;}
 .small-dim{color:var(--text-dim);font-size:12px;}
 .log-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
 .log-block label{font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;}
@@ -342,13 +360,19 @@ tr.this-week td{background:rgba(14,165,233,0.08);}
 
   <div class="card">
     <h2>Season Roadmap</h2>
-    <p class="small-dim" style="margin-top:-8px;margin-bottom:10px;">Optimal path forward given your used teams. Recalculates every time you log a pick.</p>
+    <p class="small-dim" style="margin-top:-8px;margin-bottom:10px;">Full season — logged picks (with what the model recommended at the time) plus the optimal path forward. Recalculates every time you log a pick.</p>
     <div style="overflow-x:auto;">
       <table>
         <thead><tr><th>Week</th><th>Recommended</th><th>Opponent</th><th>Win Prob</th></tr></thead>
         <tbody id="roadmapBody"></tbody>
       </table>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Week <span id="matchupsWeek">1</span> Matchups</h2>
+    <p class="small-dim" style="margin-top:-8px;margin-bottom:10px;">Win probability for every game this week (Vegas odds where a market's open, model estimate otherwise — same source the recommendation uses).</p>
+    <div id="matchupsArea"></div>
   </div>
 
   <div class="card">
@@ -389,7 +413,11 @@ const DOUBLE_WEEKS = new Set(DATA.double_weeks);
 const TEAMS = Object.keys(TEAM_NAMES);
 
 const STORAGE_KEY = 'survivor_state_v1';
-let state = { usedByWeek: {}, currentWeek: null };
+let state = { usedByWeek: {}, currentWeek: null, recommendedByWeek: {} };
+
+// Picks made before this tool existed (e.g. via Claude Chat) that we can't have
+// captured live — recorded here once so the credit still shows up.
+const HISTORICAL_RECOMMENDATIONS = { 1: ['PIT'] };
 
 function loadState(){
   try{
@@ -397,6 +425,12 @@ function loadState(){
     if(raw) state = JSON.parse(raw);
   }catch(e){ /* no saved state yet, or storage unavailable */ }
   if(!state.currentWeek) state.currentWeek = DATA.current_week || 1;
+  if(!state.recommendedByWeek) state.recommendedByWeek = {};
+  for(const w in HISTORICAL_RECOMMENDATIONS){
+    if((state.usedByWeek[w]||[]).length && !state.recommendedByWeek[w]){
+      state.recommendedByWeek[w] = HISTORICAL_RECOMMENDATIONS[w];
+    }
+  }
 }
 function saveState(){
   try{ window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -632,6 +666,9 @@ function render(){
     btn.onclick = ()=>{
       const t = sel.value;
       if(!t) return;
+      if(!state.recommendedByWeek[wk]){
+        state.recommendedByWeek[wk] = HISTORICAL_RECOMMENDATIONS[wk] || recs.map(r=>r.team);
+      }
       if(!state.usedByWeek[wk]) state.usedByWeek[wk]=[];
       state.usedByWeek[wk].push(t);
       const req = DOUBLE_WEEKS.has(wk)?2:1;
@@ -657,12 +694,12 @@ function render(){
     chipsDiv.appendChild(chip);
   });
 
-  // Roadmap table
+  // Roadmap table — full season, past weeks included, so AI-recommendation credit sticks around
   const body = document.getElementById('roadmapBody');
   body.innerHTML = '';
-  for(let w=state.currentWeek; w<=18; w++){
+  for(let w=1; w<=18; w++){
+    const isPast = w < state.currentWeek;
     const already = state.usedByWeek[w]||[];
-    const required = DOUBLE_WEEKS.has(w)?2:1;
     const recsForWeek = plan[w]||[];
     const rowsForWeek = [];
     already.forEach(t=>{
@@ -673,7 +710,8 @@ function render(){
     if(rowsForWeek.length===0){
       const tr = document.createElement('tr');
       if(w===state.currentWeek) tr.className='this-week';
-      tr.innerHTML = `<td>W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}</td><td colspan="3" class="small-dim">No pick available (bye/no data)</td>`;
+      const msg = isPast ? 'Not logged' : 'No pick available (bye/no data)';
+      tr.innerHTML = `<td>W${w}${DOUBLE_WEEKS.has(w)?'<span class="double-badge">2x</span>':''}</td><td colspan="3" class="small-dim">${msg}</td>`;
       body.appendChild(tr);
       continue;
     }
@@ -687,7 +725,42 @@ function render(){
         <td>${r.p!=null?fmtPct(r.p):'-'}</td>`;
       body.appendChild(tr);
     });
+    const rec = state.recommendedByWeek[w];
+    if(rec && rec.length){
+      const tr = document.createElement('tr');
+      const names = rec.map(t=>TEAM_NAMES[t]||t).join(', ');
+      tr.innerHTML = `<td></td><td colspan="3"><div class="ai-pick-note">🤖 AI recommended: ${names}</div></td>`;
+      body.appendChild(tr);
+    }
   }
+
+  renderMatchups();
+}
+
+function renderMatchups(){
+  document.getElementById('matchupsWeek').textContent = state.currentWeek;
+  const area = document.getElementById('matchupsArea');
+  const games = DATA.games.filter(g=>g.week===state.currentWeek);
+  if(!games.length){ area.innerHTML = '<p class="small-dim">No games scheduled this week.</p>'; return; }
+  area.innerHTML = games.map(g=>{
+    const homePct = Math.round(g.p_home*100);
+    const awayPct = 100-homePct;
+    const homeFav = homePct>=awayPct;
+    return `
+      <div class="matchup-row">
+        <div class="matchup-side away">
+          <span class="matchup-pct ${!homeFav?'fav':'dog'}">${awayPct}%</span>
+          ${logoImg(g.away,'team-logo-sm')}
+          <span class="matchup-name">${TEAM_NAMES[g.away]||g.away}</span>
+        </div>
+        <span class="matchup-at">${g.neutral?'N':'@'}</span>
+        <div class="matchup-side home">
+          <span class="matchup-name">${TEAM_NAMES[g.home]||g.home}</span>
+          ${logoImg(g.home,'team-logo-sm')}
+          <span class="matchup-pct ${homeFav?'fav':'dog'}">${homePct}%</span>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 document.getElementById('prevWeekBtn').onclick = ()=>{
