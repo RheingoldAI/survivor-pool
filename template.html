@@ -518,7 +518,7 @@ function render(){
     const options = TEAMS.filter(t=>{
       if(used.has(t)) return false;
       const info = getInfo(t, wk);
-      if(!info || info.played) return false;
+      if(!info) return false;
       if((state.usedByWeek[wk]||[]).includes(t)) return false;
       return true;
     }).sort((a,b)=> (getInfo(b,wk).p)-(getInfo(a,wk).p));
@@ -527,7 +527,8 @@ function render(){
       const info = getInfo(t,wk);
       const opt = document.createElement('option');
       opt.value = t;
-      opt.textContent = `${TEAM_NAMES[t]} (${t}) — ${fmtPct(info.p)}`;
+      const resultTag = info.played ? (info.won ? ' — WON' : ' — LOST') : ` — ${fmtPct(info.p)}`;
+      opt.textContent = `${TEAM_NAMES[t]} (${t})${resultTag}`;
       sel.appendChild(opt);
     });
     const btn = document.createElement('button');
