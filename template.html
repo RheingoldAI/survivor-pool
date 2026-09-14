@@ -4,35 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Survivor Pool Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
-
 :root{
-  --turf-dark:#0F241A;
-  --turf:#173A28;
-  --turf-light:#1F4A34;
-  --chalk:#F2F0E6;
-  --chalk-dim:#B9C4BB;
-  --gold:#C9A227;
-  --gold-bright:#E4BD3C;
-  --danger:#C0392B;
-  --line:#2C5A40;
+  --bg:#030712;
+  --card:rgba(23,23,23,0.6);
+  --card-solid:#111827;
+  --border:rgba(31,41,55,0.7);
+  --text:#F3F4F6;
+  --text-dim:#9CA3AF;
+  --text-dimmer:#6B7280;
+  --accent:#0EA5E9;
+  --accent-bright:#38BDF8;
+  --accent-hover:#0284C7;
+  --danger:#EF4444;
 }
 *{box-sizing:border-box;}
+html{font-family:'Roboto',system-ui,sans-serif;}
+h1,h2,h3,h4,h5,h6{font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
 body{
   margin:0;
-  background:var(--turf-dark);
-  color:var(--chalk);
-  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Roboto',system-ui,sans-serif;
   min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
+::selection{background:#0ea5e920;}
+a{color:var(--accent);text-decoration:none;text-underline-offset:3px;}
+a:hover{text-decoration:underline;}
+
+/* Top nav, matches jakerheingold.ai */
+.topnav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(3,7,18,0.8);
+  backdrop-filter:blur(6px);
+  border-bottom:1px solid rgba(31,41,55,0.5);
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.topnav .brand{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:-0.01em;
+  color:var(--text);
+}
+.topnav .brand:hover{color:var(--accent);text-decoration:none;}
+.topnav .back{font-size:13px;color:var(--text-dim);}
+.topnav .back:hover{color:var(--accent-bright);}
+
 .wrap{max-width:920px;margin:0 auto;padding:20px 16px 60px;}
 
 /* Header / scoreboard */
 .scoreboard{
-  background:linear-gradient(180deg,var(--turf) 0%, var(--turf-dark) 100%);
-  border:1px solid var(--line);
-  border-radius:10px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
   padding:20px 22px;
   display:flex;
   align-items:center;
@@ -41,36 +72,35 @@ body{
   flex-wrap:wrap;
 }
 .title-block h1{
-  font-family:'Oswald',sans-serif;
-  font-weight:700;
-  font-size:26px;
-  letter-spacing:0.5px;
+  font-weight:600;
+  font-size:24px;
+  letter-spacing:-0.01em;
   margin:0 0 4px 0;
-  color:var(--chalk);
+  color:var(--text);
 }
 .title-block p{
   margin:0;
-  color:var(--chalk-dim);
+  color:var(--text-dim);
   font-size:13px;
 }
 .week-pill{
-  background:var(--turf-dark);
-  border:2px solid var(--gold);
-  border-radius:8px;
+  background:var(--card-solid);
+  border:1px solid rgba(14,165,233,0.4);
+  border-radius:10px;
   padding:10px 18px;
   text-align:center;
   min-width:110px;
 }
 .week-pill .num{
-  font-family:'Oswald',sans-serif;
-  font-size:34px;
-  font-weight:700;
-  color:var(--gold-bright);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:32px;
+  font-weight:600;
+  color:var(--accent-bright);
   line-height:1;
 }
 .week-pill .lbl{
   font-size:11px;
-  color:var(--chalk-dim);
+  color:var(--text-dim);
   margin-top:4px;
 }
 
@@ -86,111 +116,111 @@ body{
   flex:0 0 auto;
   width:52px;
   height:64px;
-  border-radius:6px;
-  border:1px solid var(--line);
-  background:var(--turf);
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--card);
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  font-family:'Oswald',sans-serif;
   cursor:pointer;
   position:relative;
-  transition:transform .12s ease;
+  transition:transform .12s ease, border-color .12s ease;
 }
-.wtile:hover{transform:translateY(-2px);}
-.wtile .wn{font-size:16px;font-weight:600;color:var(--chalk-dim);}
-.wtile .tag{font-size:9px;color:var(--gold);margin-top:2px;}
-.wtile.done{background:var(--turf-light);border-color:var(--gold);}
-.wtile.done .wn{color:var(--gold-bright);}
-.wtile.current{outline:2px solid var(--gold-bright);outline-offset:1px;}
-.wtile .used-team{font-size:9px;color:var(--chalk);margin-top:2px;font-family:'Inter';}
+.wtile:hover{transform:translateY(-2px);border-color:var(--accent);}
+.wtile .wn{font-family:'IBM Plex Sans',sans-serif;font-size:16px;font-weight:600;color:var(--text-dim);}
+.wtile .tag{font-size:9px;color:var(--accent-bright);margin-top:2px;}
+.wtile.done{background:rgba(14,165,233,0.08);border-color:rgba(14,165,233,0.35);}
+.wtile.done .wn{color:var(--accent-bright);}
+.wtile.current{outline:2px solid var(--accent);outline-offset:1px;}
+.wtile .used-team{font-size:9px;color:var(--text);margin-top:2px;font-family:'Roboto',sans-serif;}
 
 /* Cards */
 .card{
-  background:var(--turf);
-  border:1px solid var(--line);
-  border-radius:10px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
   padding:20px;
   margin-top:16px;
 }
 .card h2{
-  font-family:'Oswald',sans-serif;
-  font-size:17px;
+  font-size:16px;
   font-weight:600;
   margin:0 0 14px 0;
-  color:var(--chalk);
+  color:var(--text);
+  letter-spacing:-0.01em;
 }
 .pick-row{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  background:var(--turf-dark);
-  border:1px solid var(--line);
-  border-radius:8px;
+  background:var(--card-solid);
+  border:1px solid var(--border);
+  border-radius:10px;
   padding:14px 16px;
   margin-bottom:10px;
 }
 .pick-row .team{
-  font-family:'Oswald',sans-serif;
-  font-size:20px;
-  font-weight:700;
-  color:var(--gold-bright);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:19px;
+  font-weight:600;
+  color:var(--accent-bright);
 }
 .pick-row .opp{
   font-size:12px;
-  color:var(--chalk-dim);
+  color:var(--text-dim);
   margin-top:2px;
 }
 .pick-row .prob{
-  font-family:'Oswald',sans-serif;
-  font-size:22px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:21px;
   font-weight:600;
-  color:var(--chalk);
+  color:var(--text);
 }
 .prob-bar-wrap{
   width:100%;
   height:5px;
-  background:var(--line);
+  background:rgba(31,41,55,0.8);
   border-radius:3px;
   margin-top:8px;
   overflow:hidden;
 }
-.prob-bar{height:100%;background:var(--gold-bright);}
+.prob-bar{height:100%;background:var(--accent);}
 .note{
   font-size:13px;
-  color:var(--chalk-dim);
+  color:var(--text-dim);
   line-height:1.5;
   margin-top:10px;
   padding-top:10px;
-  border-top:1px dashed var(--line);
+  border-top:1px dashed var(--border);
 }
 
 .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center;}
 select, button{
-  font-family:'Inter',sans-serif;
+  font-family:'Roboto',sans-serif;
   font-size:13px;
-  border-radius:6px;
-  border:1px solid var(--line);
+  border-radius:8px;
+  border:1px solid var(--border);
   padding:8px 12px;
-  background:var(--turf-dark);
-  color:var(--chalk);
+  background:var(--card-solid);
+  color:var(--text);
 }
 button{
-  background:var(--gold);
-  color:var(--turf-dark);
+  background:var(--accent);
+  color:#fff;
   font-weight:600;
   cursor:pointer;
   border:none;
+  transition:background .15s ease;
 }
-button:hover{background:var(--gold-bright);}
+button:hover{background:var(--accent-hover);}
 button.secondary{
   background:transparent;
-  border:1px solid var(--line);
-  color:var(--chalk-dim);
+  border:1px solid var(--border);
+  color:var(--text-dim);
   font-weight:500;
 }
-button.secondary:hover{color:var(--chalk);border-color:var(--gold);}
+button.secondary:hover{color:var(--text);border-color:var(--accent);background:transparent;}
 button:disabled{opacity:0.4;cursor:not-allowed;}
 
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
@@ -198,47 +228,53 @@ button:disabled{opacity:0.4;cursor:not-allowed;}
   font-size:12px;
   padding:5px 10px;
   border-radius:14px;
-  border:1px solid var(--line);
-  background:var(--turf-dark);
-  color:var(--chalk-dim);
+  border:1px solid var(--border);
+  background:var(--card-solid);
+  color:var(--text-dim);
 }
 .chip.used{
-  background:rgba(192,57,43,0.15);
-  border-color:var(--danger);
-  color:#E9A6A0;
+  background:rgba(239,68,68,0.1);
+  border-color:rgba(239,68,68,0.5);
+  color:#FCA5A5;
   text-decoration:line-through;
 }
 
 table{width:100%;border-collapse:collapse;font-size:13px;}
 th{
   text-align:left;
-  font-family:'Oswald',sans-serif;
+  font-family:'IBM Plex Sans',sans-serif;
   font-weight:500;
   font-size:11px;
   letter-spacing:0.3px;
-  color:var(--chalk-dim);
+  color:var(--text-dim);
   padding:6px 8px;
-  border-bottom:1px solid var(--line);
+  border-bottom:1px solid var(--border);
 }
-td{padding:7px 8px;border-bottom:1px solid rgba(44,90,64,0.5);color:var(--chalk);}
-tr.this-week td{background:rgba(201,162,39,0.12);}
+td{padding:7px 8px;border-bottom:1px solid rgba(31,41,55,0.5);color:var(--text);}
+tr.this-week td{background:rgba(14,165,233,0.08);}
 .double-badge{
   font-size:9px;
-  background:var(--gold);
-  color:var(--turf-dark);
+  background:var(--accent);
+  color:#fff;
   padding:1px 5px;
   border-radius:4px;
   margin-left:6px;
   font-weight:700;
 }
-.small-dim{color:var(--chalk-dim);font-size:12px;}
-.log-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
-.log-block label{font-size:12px;color:var(--chalk-dim);display:block;margin-bottom:6px;}
+.small-dim{color:var(--text-dim);font-size:12px;}
+.log-block{margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);}
+.log-block label{font-size:12px;color:var(--text-dim);display:block;margin-bottom:6px;}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 @media(max-width:520px){.two-col{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
+
+<div class="topnav">
+  <a class="brand" href="https://jakerheingold.ai">Jake Rheingold</a>
+  <a class="back" href="https://jakerheingold.ai#builds">&larr; Back to jakerheingold.ai</a>
+</div>
+
 <div class="wrap">
 
   <div class="scoreboard">
