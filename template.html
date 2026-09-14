@@ -349,6 +349,7 @@ tr.this-week td{background:rgba(14,165,233,0.08);}
     <div id="pickArea"></div>
     <div class="log-block">
       <label>Log the pick(s) you actually made this week:</label>
+      <p class="small-dim" style="margin-top:-4px;margin-bottom:10px;">Official picks are baked into the page for everyone. Logging one here only saves to your own browser unless it's been made official.</p>
       <div class="controls" id="logControls"></div>
     </div>
   </div>
@@ -415,9 +416,10 @@ const TEAMS = Object.keys(TEAM_NAMES);
 const STORAGE_KEY = 'survivor_state_v1';
 let state = { usedByWeek: {}, currentWeek: null, recommendedByWeek: {} };
 
-// Picks made before this tool existed (e.g. via Claude Chat) that we can't have
-// captured live — recorded here once so the credit still shows up.
-const HISTORICAL_RECOMMENDATIONS = { 1: ['PIT'] };
+// The season's official picks, baked into every build from picks.json — this is what
+// makes a logged pick show up for everyone who opens the link, not just whoever's
+// browser clicked "Log Pick." Local storage only layers your own exploration on top.
+const LOGGED_PICKS = DATA.logged_picks || {};
 
 function loadState(){
   try{
@@ -426,10 +428,13 @@ function loadState(){
   }catch(e){ /* no saved state yet, or storage unavailable */ }
   if(!state.currentWeek) state.currentWeek = DATA.current_week || 1;
   if(!state.recommendedByWeek) state.recommendedByWeek = {};
-  for(const w in HISTORICAL_RECOMMENDATIONS){
-    if((state.usedByWeek[w]||[]).length && !state.recommendedByWeek[w]){
-      state.recommendedByWeek[w] = HISTORICAL_RECOMMENDATIONS[w];
-    }
+  // Official picks always win over whatever's in this browser's local storage, so a
+  // correction made to picks.json propagates everywhere (including the device that
+  // originally logged it) instead of being masked by stale local state forever.
+  for(const w in LOGGED_PICKS){
+    const record = LOGGED_PICKS[w];
+    if(record.picked && record.picked.length) state.usedByWeek[w] = record.picked.slice();
+    if(record.recommended) state.recommendedByWeek[w] = record.recommended;
   }
 }
 function saveState(){
@@ -667,7 +672,7 @@ function render(){
       const t = sel.value;
       if(!t) return;
       if(!state.recommendedByWeek[wk]){
-        state.recommendedByWeek[wk] = HISTORICAL_RECOMMENDATIONS[wk] || recs.map(r=>r.team);
+        state.recommendedByWeek[wk] = (LOGGED_PICKS[wk] && LOGGED_PICKS[wk].recommended) || recs.map(r=>r.team);
       }
       if(!state.usedByWeek[wk]) state.usedByWeek[wk]=[];
       state.usedByWeek[wk].push(t);

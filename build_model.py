@@ -36,6 +36,19 @@ UA = "Mozilla/5.0 (compatible; survivor-pool-optimizer/1.0; +https://jakerheingo
 TEAM_ALIASES = {"LAR": "LA", "OAK": "LV"}
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PICKS_PATH = os.path.join(BASE_DIR, "picks.json")
+
+
+def load_logged_picks():
+    """The season's actual picks, checked into picks.json so they're baked into every
+    build and visible to anyone loading the page — not just whoever's browser logged
+    them. Update this file (week -> {picked: [...], recommended: [...]}) and rerun the
+    pipeline whenever a real pick is made."""
+    try:
+        with open(PICKS_PATH) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
 
 
 def fetch_games():
@@ -200,6 +213,7 @@ def main():
         "games": games,
         "team_week": {f"{t}|{w}": v for (t, w), v in team_week.items()},
         "optimal_assignment": optimal_assignment,
+        "logged_picks": load_logged_picks(),
     }
 
     template_path = os.path.join(BASE_DIR, "template.html")
