@@ -14,12 +14,10 @@ import io
 import json
 import math
 import os
-import re
 import sys
 from datetime import datetime, timezone
 
 import requests
-from bs4 import BeautifulSoup
 from scipy.optimize import linear_sum_assignment
 import numpy as np
 
@@ -29,7 +27,9 @@ WEEKS = list(range(1, 19))
 DOUBLE_WEEKS = {6, 11, 12, 13, 16, 17, 18}
 
 NFLVERSE_GAMES_URL = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
-NFELO_RATINGS_URL = "https://www.nfeloapp.com/nfl-power-ratings/"
+# nfelo's own automated model output (same data that powers nfeloapp.com, but this
+# updates ahead of the public site and is validated by season/week instead of scraped HTML).
+NFELO_RATINGS_URL = "https://raw.githubusercontent.com/greerreNFL/nfelo/main/output_data/elo_snapshot.csv"
 UA = "Mozilla/5.0 (compatible; survivor-pool-optimizer/1.0; +https://jakerheingold.ai/survivor)"
 
 # nfelo's team abbreviations that differ from nflverse's
@@ -48,37 +48,22 @@ def fetch_games():
 def fetch_nfelo_ratings():
     resp = requests.get(NFELO_RATINGS_URL, headers={"User-Agent": UA}, timeout=30)
     resp.raise_for_status()
-    soup = BeautifulSoup(resp.text, "html.parser")
-
-    ratings_table = None
-    for table in soup.find_all("table"):
-        header_text = table.get_text(" ", strip=True)
-        if "nfelo" in header_text and "QB Adj" in header_text:
-            ratings_table = table
-    if ratings_table is None:
-        raise RuntimeError(
-            "Could not locate the nfelo ratings table on the page — "
-            "the site's layout may have changed and this scraper needs an update."
-        )
+    reader = csv.DictReader(io.StringIO(resp.text))
 
     ratings = {}
-    for row in ratings_table.find_all("tr"):
-        cells = [c.get_text(" ", strip=True) for c in row.find_all(["td", "th"])]
-        if len(cells) < 4:
-            continue
-        m = re.match(r"^.*?\s([A-Z]{2,3})\s", cells[1] + " ")
-        if not m:
-            continue
-        abbr = TEAM_ALIASES.get(m.group(1), m.group(1))
-        try:
-            elo = float(cells[2])
-            qb_adj = float(cells[3].replace("+", ""))
-        except ValueError:
-            continue
-        ratings[abbr] = (elo, qb_adj)
+    seasons_seen = set()
+    for row in reader:
+        seasons_seen.add(row["season"])
+        abbr = TEAM_ALIASES.get(row["team"], row["team"])
+        ratings[abbr] = (float(row["nfelo_base"]), float(row["qb_adj"]))
 
     if len(ratings) < 32:
-        raise RuntimeError(f"Only parsed {len(ratings)}/32 teams from nfelo — scrape likely broken.")
+        raise RuntimeError(f"Only parsed {len(ratings)}/32 teams from nfelo's elo_snapshot.csv — format may have changed.")
+    if str(SEASON) not in seasons_seen:
+        raise RuntimeError(
+            f"nfelo's elo_snapshot.csv is on season(s) {seasons_seen}, not {SEASON} — "
+            "their pipeline is behind and these ratings would be stale. Refusing to use them."
+        )
     return ratings
 
 
